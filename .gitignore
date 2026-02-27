@@ -14,7 +14,6 @@ ENV/
 # Node.js / Frontend
 node_modules/
 dist/
-build/
 .npm
 npm-debug.log*
 
