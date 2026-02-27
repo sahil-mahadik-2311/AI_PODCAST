@@ -8,5 +8,4 @@ aiofiles
 python-multipart
 pydantic-settings
 google-adk
-google-adk-tools
 pydub
