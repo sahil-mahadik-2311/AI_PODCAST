@@ -26,7 +26,8 @@ class UnifiedAgentService:
         attribution: Optional[str] = None
     ) -> Dict[str, Any]:
         """
-        Main entry point: generate financial podcast script using Google ADK agent.
+        Main entry point: generate financial podcast scripts (English and Hindi) using Google ADK agent.
+        Returns two separate podcast scripts: eng_pod (English) and hin_pod (Hindi).
         """
         target_date = target_date or "yesterday"
         attribution = attribution or "Financial Research Team"
@@ -39,35 +40,109 @@ class UnifiedAgentService:
 
             prompt = build_podcast_prompt(target_date, attribution)
 
-            raw_response = await run_agent_and_get_script(
+            # Run agent and get dictionary with both scripts
+            scripts_dict = await run_agent_and_get_script(
                 agent=self.agent,
                 session_service=self.session_service,
                 prompt=prompt,
                 app_name=self.app_name
             )
 
-            if not raw_response:
+            if not scripts_dict:
                 return error_response("No valid response received from agent")
 
-            cleaned_script = clean_generated_script(raw_response)
+            # Validate that we have both scripts
+            if "eng_pod" not in scripts_dict or "hin_pod" not in scripts_dict:
+                logger.error("Agent response missing eng_pod or hin_pod")
+                return error_response("Invalid response format - missing eng_pod or hin_pod")
 
-            if len(cleaned_script) < 300:
-                logger.warning(f"Generated script too short: {len(cleaned_script)} chars")
-                return error_response(f"Script too short ({len(cleaned_script)} chars)")
+            # Extract and clean both scripts
+            eng_pod_raw = scripts_dict.get("eng_pod", "")
+            hin_pod_raw = scripts_dict.get("hin_pod", "")
 
-            logger.info(f"✓ Final podcast script ready — {len(cleaned_script)} characters")
+            # Clean both scripts
+            eng_pod_cleaned = clean_generated_script(eng_pod_raw)
+            hin_pod_cleaned = clean_generated_script(hin_pod_raw)
+
+            # Validate both scripts have sufficient content
+            min_length = 300
+            if len(eng_pod_cleaned) < min_length:
+                logger.warning(f"English script too short: {len(eng_pod_cleaned)} chars")
+                return error_response(f"English script too short ({len(eng_pod_cleaned)} chars)")
+
+            if len(hin_pod_cleaned) < min_length:
+                logger.warning(f"Hindi script too short: {len(hin_pod_cleaned)} chars")
+                return error_response(f"Hindi script too short ({len(hin_pod_cleaned)} chars)")
+
+            logger.info(
+                f"✓ Podcast scripts generated successfully — "
+                f"eng_pod: {len(eng_pod_cleaned)} chars, "
+                f"hin_pod: {len(hin_pod_cleaned)} chars"
+            )
 
             return {
-                "podcast_script": cleaned_script,
+                "eng_pod": eng_pod_cleaned,
+                "hin_pod": hin_pod_cleaned,
                 "success": True,
                 "attribution": attribution,
                 "date": target_date,
-                "script_length": len(cleaned_script)
+                "eng_pod_length": len(eng_pod_cleaned),
+                "hin_pod_length": len(hin_pod_cleaned),
+                "total_length": len(eng_pod_cleaned) + len(hin_pod_cleaned),
+                "scripts_generated": 2
             }
 
         except Exception as e:
             logger.error(f"Critical error in podcast generation: {str(e)}", exc_info=True)
             return error_response(str(e))
+
+    async def process_podcast_request_for_tts(
+        self,
+        target_date: Optional[str] = None,
+        attribution: Optional[str] = None,
+        return_format: str = "dict"
+    ) -> Dict[str, Any]:
+        """
+        Generate podcast scripts and return in format suitable for TTS processing.
+        
+        Args:
+            target_date: Target date for financial updates
+            attribution: Podcast attribution/name
+            return_format: 'dict' for Python dict, 'json' for JSON-serializable format
+        
+        Returns:
+            Dictionary with eng_pod and hin_pod ready for Sarvam TTS
+        """
+        result = await self.process_podcast_request(target_date, attribution)
+
+        if not result.get("success"):
+            return result
+
+        # Format for TTS processing
+        tts_ready_response = {
+            "status": "success",
+            "eng_pod": {
+                "language": "en",
+                "content": result.get("eng_pod"),
+                "length_chars": result.get("eng_pod_length"),
+                "ready_for_tts": True
+            },
+            "hin_pod": {
+                "language": "hi",
+                "content": result.get("hin_pod"),
+                "length_chars": result.get("hin_pod_length"),
+                "ready_for_tts": True
+            },
+            "metadata": {
+                "attribution": result.get("attribution"),
+                "date": result.get("date"),
+                "total_scripts": 2,
+                "total_characters": result.get("total_length")
+            }
+        }
+
+        logger.info("Podcast scripts formatted and ready for TTS processing")
+        return tts_ready_response
 
 
 # Global instance

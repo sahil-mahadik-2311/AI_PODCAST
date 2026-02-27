@@ -1,8 +1,33 @@
-import React, { useState, useEffect, useRef } from "react";
-import { generatePodcast } from './api/apiClient';
+import { useState } from "react";
 
-const voices = ["sachit (Male/En)", "anushka (Female/Hi)", "karan (Male/Hi)"];
-const languages = ["Hindi", "English", "Both"];
+const podcasts = [
+  {
+    id: 1,
+    name: "Rahul Sharma",
+    duration: "7:10",
+    description: "Markets rally as RBI holds rates steady; Sensex surges 1.2% driven by IT and banking stocks.",
+    date: "Feb 26, 2025",
+    lang: "Hindi",
+  },
+  {
+    id: 2,
+    name: "Finance AI",
+    duration: "8:00",
+    description: "Nifty touches new high; FII inflows surge amid positive global cues and strong Q3 earnings.",
+    date: "Feb 26, 2025",
+    lang: "Hindi",
+  },
+  {
+    id: 3,
+    name: "Priya Mehta",
+    duration: "6:45",
+    description: "Rupee strengthens against dollar; crude oil dips below $80 boosting Indian market sentiment.",
+    date: "Feb 25, 2025",
+    lang: "English",
+  },
+];
+
+const voices = ["Meera (Female)", "Arvind (Male)", "Nisha (Female)", "Rajan (Male)"];
 
 const style = `
   @import url('https://fonts.googleapis.com/css2?family=DM+Serif+Display:ital@0;1&family=DM+Sans:wght@300;400;500;600&display=swap');
@@ -154,7 +179,7 @@ const style = `
     align-items: center;
     gap: 16px;
     transition: all 0.2s ease;
-    cursor: auto;
+    cursor: pointer;
   }
 
   .podcast-card:hover {
@@ -171,7 +196,6 @@ const style = `
     display: flex; align-items: center; justify-content: center;
     font-size: 16px; color: #eab308;
     transition: all 0.2s;
-    cursor: pointer;
   }
 
   .podcast-card:hover .play-btn {
@@ -232,7 +256,6 @@ const style = `
     color: #6a6860; font-size: 14px;
     cursor: pointer;
     transition: all 0.2s;
-    text-decoration: none;
   }
 
   .download-btn:hover { background: rgba(234,179,8,0.15); color: #eab308; border-color: rgba(234,179,8,0.3); }
@@ -299,7 +322,7 @@ const style = `
     color: #4a4840; pointer-events: none; font-size: 12px;
   }
 
-  .lang-grid { display: grid; grid-template-columns: 1fr 1fr 1fr; gap: 10px; }
+  .lang-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; }
 
   .lang-option {
     padding: 12px 16px;
@@ -341,7 +364,6 @@ const style = `
 
   .submit-btn:hover { box-shadow: 0 8px 32px rgba(234,179,8,0.4); transform: translateY(-1px); }
   .submit-btn:active { transform: translateY(0); }
-  .submit-btn:disabled { opacity: 0.5; cursor: not-allowed; }
 
   /* Script modal */
   .modal-overlay {
@@ -682,98 +704,76 @@ const style = `
   }
 
   .empty-icon { font-size: 36px; margin-bottom: 12px; opacity: 0.4; }
-  
-  .error-text {
-      color: #ef4444;
-      font-size: 14px;
-      margin-top: 20px;
-      text-align: center;
-  }
 `;
 
-const BAR_HEIGHTS = [30, 55, 40, 70, 50, 85, 45, 60, 35, 75, 55, 40, 65, 80, 45, 55, 70, 35, 60, 50, 75, 40, 65, 30, 80, 55, 45, 70, 50, 60];
+const SAMPLE_SCRIPT = `नमस्कार! स्मार्ट फाइनेंस पॉडकास्ट में आपका स्वागत है।
 
-function CustomAudioPlayer({ voice, name, audioUrl }) {
-    const [isPlaying, setIsPlaying] = useState(false);
-    const [progress, setProgress] = useState(0);
-    const [currentTime, setCurrentTime] = useState(0);
-    const [duration, setDuration] = useState(0);
-    const audioRef = useRef(null);
+आज हम बात करेंगे कल के प्रमुख वित्तीय समाचारों की।
 
-    const backendBase = process.env.REACT_APP_API_URL ? process.env.REACT_APP_API_URL.replace('/api/v1', '') : 'http://localhost:8000';
-    const fullAudioUrl = audioUrl ?`${backendBase}${audioUrl}` : null;
+भारतीय बाजारों में कल जोरदार तेजी देखी गई। सेंसेक्स 1.2% की बढ़त के साथ बंद हुआ, जबकि निफ्टी ने 18,500 का स्तर पार किया। आईटी और बैंकिंग शेयरों ने बाजार को आगे बढ़ाने में महत्वपूर्ण भूमिका निभाई।
 
-  useEffect(() => {
-    if (fullAudioUrl) {
-      audioRef.current = new Audio(fullAudioUrl);
-      
-      const setAudioData = () => {
-        setDuration(audioRef.current.duration);
-      };
-      
-      const setAudioTime = () => {
-        setCurrentTime(audioRef.current.currentTime);
-        setProgress((audioRef.current.currentTime / audioRef.current.duration) * 100);
-      };
-      
-      audioRef.current.addEventListener('loadedmetadata', setAudioData);
-      audioRef.current.addEventListener('timeupdate', setAudioTime);
-      audioRef.current.addEventListener('ended', () => setIsPlaying(false));
-      
-      return () => {
-        if (audioRef.current) {
-          audioRef.current.pause();
-          audioRef.current.removeEventListener('loadedmetadata', setAudioData);
-          audioRef.current.removeEventListener('timeupdate', setAudioTime);
-          audioRef.current.removeAttribute('src');
-          audioRef.current.load();
-        }
-      };
-    }
-  }, [fullAudioUrl]);
+रिजर्व बैंक ने ब्याज दरों में कोई बदलाव नहीं किया, जिससे निवेशकों का मनोबल बढ़ा। विदेशी संस्थागत निवेशकों ने ₹3,200 करोड़ की खरीदारी की।
 
-  const togglePlay = () => {
-    if (!audioRef.current) return;
-    if (isPlaying) {
-      audioRef.current.pause();
-    } else {
-      audioRef.current.play();
-    }
-    setIsPlaying(!isPlaying);
-  };
+क्रूड ऑयल की कीमतें $79 प्रति बैरल पर स्थिर रहीं, जो भारतीय अर्थव्यवस्था के लिए सकारात्मक संकेत है।
 
-  const handleSeek = (e) => {
-    if (!audioRef.current) return;
-    const rect = e.currentTarget.getBoundingClientRect();
-    const pos = (e.clientX - rect.left) / rect.width;
-    audioRef.current.currentTime = pos * audioRef.current.duration;
-    setProgress(pos * 100);
-  };
+यह था आज का स्मार्ट फाइनेंस ब्रीफ। धन्यवाद!`;
 
-  const fmt = s => {
-    if (isNaN(s)) return "0:00";
-    return `${Math.floor(s/60)}:${String(Math.floor(s%60)).padStart(2,'0')}`;
-  };
+const BAR_HEIGHTS = [30,55,40,70,50,85,45,60,35,75,55,40,65,80,45,55,70,35,60,50,75,40,65,30,80,55,45,70,50,60];
+
+function AudioPlayer({ voice, name }) {
+  const [isPlaying, setIsPlaying] = useState(false);
+  const [progress, setProgress] = useState(22);
+  const [audioReady, setAudioReady] = useState(false);
+
+  useState(() => {
+    const t = setTimeout(() => setAudioReady(true), 1800);
+    return () => clearTimeout(t);
+  });
+
+  const { useEffect: ue, useRef: ur } = { useEffect: (f, d) => { const [r] = useState(() => { let ran = false; return { run: () => { if (!ran) { ran = true; f(); } } }; }); r.run(); }, useRef: () => ({ current: null }) };
+
+  // Simulate playback progress
+  const [tick, setTick] = useState(0);
+  useState(() => {
+    if (!isPlaying) return;
+    const id = setInterval(() => setProgress(p => p >= 100 ? (setIsPlaying(false), 0) : p + 0.4), 100);
+    return () => clearInterval(id);
+  });
+
+  const elapsed = Math.floor((progress / 100) * 487);
+  const fmt = s => `${Math.floor(s/60)}:${String(s%60).padStart(2,'0')}`;
+
+  if (!audioReady) return (
+    <div className="audio-waveform">
+      <div className="audio-generating">
+        <div className="spinner"></div>
+        Generating Hindi audio via Sarvam TTS...
+      </div>
+    </div>
+  );
 
   return (
     <div className="audio-waveform">
       <div className="audio-top">
-        <button className="audio-play-btn" onClick={togglePlay}>
+        <button className="audio-play-btn" onClick={() => setIsPlaying(p => !p)}>
           {isPlaying ? "⏸" : "▶"}
         </button>
         <div className="audio-info">
           <div className="audio-title">{name}'s Daily Brief</div>
-          <div className="audio-meta">{voice} · Podcast</div>
+          <div className="audio-meta">{voice} · Hindi Podcast</div>
         </div>
-        <div className="audio-duration">{fmt(currentTime)} / {fmt(duration)}</div>
+        <div className="audio-duration">{fmt(elapsed)} / 8:07</div>
       </div>
 
-      <div className="progress-wrap" onClick={handleSeek}>
+      <div className="progress-wrap" onClick={e => {
+        const rect = e.currentTarget.getBoundingClientRect();
+        setProgress(((e.clientX - rect.left) / rect.width) * 100);
+      }}>
         <div className="progress-fill" style={{ width: `${progress}%` }}>
           <div className="progress-thumb"></div>
         </div>
       </div>
-      <div className="progress-times"><span>{fmt(currentTime)}</span><span>{fmt(duration)}</span></div>
+      <div className="progress-times"><span>{fmt(elapsed)}</span><span>8:07</span></div>
 
       <div className="bars-wrap">
         {BAR_HEIGHTS.map((h, i) => (
@@ -785,114 +785,45 @@ function CustomAudioPlayer({ voice, name, audioUrl }) {
   );
 }
 
-// Global Audio URL configuration helper
-const getBackendBaseUrl = () => {
-    return process.env.REACT_APP_API_URL ? process.env.REACT_APP_API_URL.replace('/api/v1', '') : 'http://localhost:8000';
-}
-
+// stage: "transcript_loading" | "transcript_ready" | "audio_loading" | "audio_ready"
 export default function App() {
   const [activeTab, setActiveTab] = useState("search");
   const [searchQuery, setSearchQuery] = useState("");
   const [name, setName] = useState("");
   const [voice, setVoice] = useState(voices[0]);
-  const [language, setLanguage] = useState(languages[0]);
+  const [language, setLanguage] = useState("Hindi");
   const [showModal, setShowModal] = useState(false);
   const [stage, setStage] = useState("transcript_loading");
-  
-  // State for fetched generated podcast
-  const [generatedData, setGeneratedData] = useState(null);
   const [script, setScript] = useState("");
-  const [errorMsg, setErrorMsg] = useState("");
-
-  // Storage for previously generated podcasts
-  const [podcasts, setPodcasts] = useState(() => {
-    try {
-      return JSON.parse(localStorage.getItem('podcasts')) || [];
-    } catch {
-      return [];
-    }
-  });
-
-  useEffect(() => {
-    localStorage.setItem('podcasts', JSON.stringify(podcasts));
-  }, [podcasts]);
 
   const filtered = podcasts.filter(p =>
     p.name.toLowerCase().includes(searchQuery.toLowerCase()) ||
-    (p.description && p.description.toLowerCase().includes(searchQuery.toLowerCase()))
+    p.description.toLowerCase().includes(searchQuery.toLowerCase())
   );
 
-  const handleGenerate = async () => {
+  const handleGenerate = () => {
     if (!name.trim()) return;
-    
-    // Map UI language to backend specific format
-    let langCode = 'both';
-    if (language === 'Hindi') langCode = 'hi';
-    if (language === 'English') langCode = 'en';
-
-    let voiceCode = voice.split(' ')[0]; // extracts 'sachit' from 'sachit (Male/En)'
-
     setShowModal(true);
     setStage("transcript_loading");
     setScript("");
-    setErrorMsg("");
-    setGeneratedData(null);
-
-    try {
-      const data = await generatePodcast(name, voiceCode, langCode);
-      setGeneratedData(data);
-      
-      const displayScript = langCode === 'hi' ? data.scripts?.hin_pod : 
-                           (langCode === 'en' ? data.scripts?.eng_pod : 
-                           data.scripts?.eng_pod + "\\n\\n" + data.scripts?.hin_pod);
-                           
-      setScript(displayScript || "Transcript generated successfully.");
+    setTimeout(() => {
+      setScript(SAMPLE_SCRIPT);
       setStage("transcript_ready");
-    } catch (err) {
-      console.error(err);
-      setErrorMsg(err?.toString() || "Failed to generate podcast");
-      setStage("transcript_loading"); // Keeps it on step 1 with error
-    }
+    }, 2200);
   };
 
   const handleApproveTranscript = () => {
     setStage("audio_loading");
-    // Since backend already generated the audio, we just mock the audio generation time
-    // to give user the perception of the 2-step process.
     setTimeout(() => {
       setStage("audio_ready");
-    }, 1500);
+    }, 2500);
   };
 
   const handlePublish = () => {
-    // Save to local storage
-    if (generatedData) {
-      const newPodcast = {
-        id: Date.now(),
-        name: generatedData.name || name,
-        description: script.substring(0, 100) + '...',
-        date: new Date().toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' }),
-        lang: language,
-        audioUrl: generatedData.audio?.eng_pod_audio || generatedData.audio?.hin_pod_audio || null
-      };
-      
-      setPodcasts([newPodcast, ...podcasts]);
-    }
-    
     setShowModal(false);
     setActiveTab("search");
     setName("");
     setStage("transcript_loading");
-  };
-
-  const playSavedPodcast = (podcast) => {
-      if (podcast.audioUrl) {
-          setName(podcast.name);
-          setLanguage(podcast.lang);
-          setGeneratedData({ audio: { eng_pod_audio: podcast.audioUrl } }); // mock format to play
-          setStage("audio_ready");
-          setShowModal(true);
-      }
   };
 
   return (
@@ -942,7 +873,7 @@ export default function App() {
                     No podcasts found for "{searchQuery}"
                   </div>
                 ) : filtered.map(p => (
-                  <div className="podcast-card" key={p.id} onClick={() => playSavedPodcast(p)}>
+                  <div className="podcast-card" key={p.id}>
                     <div className="play-btn">▶</div>
                     <div className="podcast-info">
                       <div className="podcast-header">
@@ -952,14 +883,8 @@ export default function App() {
                       <div className="podcast-desc">{p.description}</div>
                     </div>
                     <div className="podcast-meta">
-                      <span className="duration">Podcast</span>
-                      <a 
-                        className="download-btn" 
-                        title="Download"
-                        href={p.audioUrl ? `${getBackendBaseUrl()}${p.audioUrl}` : "#"}
-                        download
-                        onClick={(e) => e.stopPropagation()}
-                      >⬇</a>
+                      <span className="duration">{p.duration}</span>
+                      <button className="download-btn" title="Download">⬇</button>
                     </div>
                   </div>
                 ))}
@@ -996,19 +921,19 @@ export default function App() {
               <div className="form-group">
                 <label className="form-label">Language</label>
                 <div className="lang-grid">
-                  {languages.map(l => (
+                  {["Hindi", "English"].map(l => (
                     <div
                       key={l}
                       className={`lang-option ${language === l ? "selected" : ""}`}
                       onClick={() => setLanguage(l)}
                     >
-                      {l === "Hindi" ? "🇮🇳 Hindi" : (l === "English" ? "🌐 English" : "🔄 Both")}
+                      {l === "Hindi" ? "🇮🇳 Hindi" : "🌐 English"}
                     </div>
                   ))}
                 </div>
               </div>
 
-              <button className="submit-btn" onClick={handleGenerate} disabled={!name.trim() || stage === "transcript_loading" && showModal}>
+              <button className="submit-btn" onClick={handleGenerate} disabled={!name.trim()}>
                 <span>✦</span> Generate Podcast
               </button>
             </div>
@@ -1045,21 +970,12 @@ export default function App() {
                 <>
                   <div className="modal-tag">Step 1 of 3</div>
                   <div className="modal-title">Generating Transcript</div>
-                  {errorMsg ? (
-                      <div className="error-text">
-                          <p>⚠️ {errorMsg}</p>
-                          <div className="modal-actions" style={{ marginTop: 20 }}>
-                              <button className="btn-secondary" onClick={() => setShowModal(false)}>Close</button>
-                          </div>
-                      </div>
-                  ) : (
-                      <div className="script-box">
-                        <div className="generating">
-                          <div className="spinner"></div>
-                          Researching & writing your financial brief... (This may take 2-3 minutes)
-                        </div>
-                      </div>
-                  )}
+                  <div className="script-box">
+                    <div className="generating">
+                      <div className="spinner"></div>
+                      Writing your financial brief...
+                    </div>
+                  </div>
                 </>
               )}
 
@@ -1073,13 +989,13 @@ export default function App() {
                     <div className="approve-icon">👀</div>
                     <div className="approve-text">
                       <div className="approve-title">Happy with the transcript?</div>
-                      <div className="approve-sub">Approve it to hear the generated audio podcast.</div>
+                      <div className="approve-sub">Approve it to generate the Hindi audio podcast.</div>
                     </div>
                   </div>
                   <div className="modal-actions">
                     <button className="btn-secondary" onClick={() => setShowModal(false)}>✕ Discard</button>
                     <button className="btn-primary" onClick={handleApproveTranscript}>
-                      <span>✓</span> Continue to Audio
+                      <span>✓</span> Approve & Generate Audio
                     </button>
                   </div>
                 </>
@@ -1089,11 +1005,11 @@ export default function App() {
               {stage === "audio_loading" && (
                 <>
                   <div className="modal-tag">Step 2 of 3</div>
-                  <div className="modal-title">Loading Audio</div>
+                  <div className="modal-title">Generating Audio</div>
                   <div className="audio-waveform" style={{ marginBottom: 20 }}>
                     <div className="audio-generating">
                       <div className="spinner"></div>
-                      Preparing your podcast audio...
+                      Generating Hindi audio via Sarvam TTS...
                     </div>
                   </div>
                 </>
@@ -1104,23 +1020,7 @@ export default function App() {
                 <>
                   <div className="modal-tag">Step 3 of 3 — Ready!</div>
                   <div className="modal-title">Your Podcast is Ready 🎉</div>
-                  
-                  {/* Since generatedData could have multiple audios (eng_pod_audio, hin_pod_audio) we play the chosen language or fallback. */}
-                  {generatedData?.audio?.eng_pod_audio && (
-                      <CustomAudioPlayer 
-                          voice="English" 
-                          name={name} 
-                          audioUrl={generatedData.audio.eng_pod_audio} 
-                      />
-                  )}
-                  {generatedData?.audio?.hin_pod_audio && (
-                      <CustomAudioPlayer 
-                          voice="Hindi" 
-                          name={name} 
-                          audioUrl={generatedData.audio.hin_pod_audio} 
-                      />
-                  )}
-                  
+                  <AudioPlayer voice={voice} name={name} />
                   <div style={{ marginTop: 16 }}>
                     <div className="approve-banner">
                       <div className="approve-icon">🎙</div>
@@ -1130,9 +1030,9 @@ export default function App() {
                       </div>
                     </div>
                     <div className="modal-actions">
-                      <button className="btn-secondary" onClick={() => setShowModal(false)}>✕ Close</button>
+                      <button className="btn-secondary" onClick={() => setShowModal(false)}>✕ Cancel</button>
                       <button className="btn-primary" onClick={handlePublish}>
-                        <span>🚀</span> Publish to Search
+                        <span>🚀</span> Publish Podcast
                       </button>
                     </div>
                   </div>

@@ -12,7 +12,11 @@ async def generate_podcast(request: GenerateRequest):
     Generate a finance market brief and podcast.
     """
     logger.info(f"Received generate request for: {request.name}")
-    result = await orchestrator_service.generate_podcast(request.name, request.voice_agent)
+    result = await orchestrator_service.generate_podcast(
+        name=request.name,
+        voice_agent=request.voice_agent,
+        language=request.language
+    )
     
     if result["status"] == "error":
         if result["error"] == "Insufficient verified updates for yesterday.":

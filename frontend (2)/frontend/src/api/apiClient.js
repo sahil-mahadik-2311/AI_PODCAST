@@ -9,9 +9,9 @@ const apiClient = axios.create({
     },
 });
 
-export const generatePodcast = async (topic, voice = null) => {
+export const generatePodcast = async (topic, voice = null, language = "both") => {
     try {
-        const payload = { name: topic };
+        const payload = { name: topic, language };
         if (voice) payload.voice_agent = voice;
         const response = await apiClient.post('/generate', payload);
         return response.data;
